@@ -18,9 +18,24 @@ TARGET = XyToolsLite.pyc
 OBFUSCATOR = obfuscate_safe.py
 
 # ============================================================
+# GIT PULL (Update dari remote)
+# ============================================================
+pull:
+	@echo "$(CYAN)   >>> Checking for updates...$(RESET)"
+	@command -v git >/dev/null 2>&1 || { \
+		echo "$(RED)   [-] git not found. Installing...$(RESET)"; \
+		pkg install git -y 2>/dev/null || apt install git -y 2>/dev/null; \
+	}
+	@git pull origin main 2>&1 | grep -E "Already up to date|files? changed|error" | head -1 | \
+		sed "s/Already up to date./$(GREEN)   [+] Already up to date.$(RESET)/" | \
+		sed "s/error/$(RED)   [-] Git pull error$(RESET)/" || \
+		echo "$(YELLOW)   [!] Git pull failed. Continuing with local files...$(RESET)"
+	@echo ""
+
+# ============================================================
 # RUN (Jalankan tools langsung)
 # ============================================================
-run: $(TARGET)
+run: pull $(TARGET)
 	@clear
 	@echo "$(CYAN)   >>> XYTOOLS LITE ENGINE STARTING...$(RESET)"
 	@echo "$(YELLOW)   [+] Checking dependencies...$(RESET)"
@@ -34,27 +49,3 @@ run: $(TARGET)
 	}
 	@echo "$(GREEN)   [+] Dependencies OK.$(RESET)"
 	@sleep 0.5
-	@echo "$(CYAN)   [+] Running $(TARGET)...$(RESET)"
-	@python3 $(TARGET)
-
-# ============================================================
-# BUILD (Buat file .pyc dari .py)
-# ============================================================
-build: $(SOURCE)
-	@echo "$(YELLOW)   [+] Building $(TARGET) from $(SOURCE)...$(RESET)"
-	@if [ ! -f $(OBFUSCATOR) ]; then \
-		echo "$(RED)   [-] obfuscate_safe.py not found!$(RESET)"; \
-		echo "$(YELLOW)   [!] Please place obfuscate_safe.py in the same folder.$(RESET)"; \
-		exit 1; \
-	fi
-	@python3 $(OBFUSCATOR) $(SOURCE) $(TARGET)
-	@echo "$(GREEN)   [+] Build complete!$(RESET)"
-	@echo "$(CYAN)   [+] You can now run: make run$(RESET)"
-
-# ============================================================
-# CLEAN (Hapus file .pyc dan lock)
-# ============================================================
-clean:
-	@echo "$(YELLOW)   [+] Cleaning build files...$(RESET)"
-	@rm -f $(TARGET) ~/.xytools_lite.lock
-	@echo "$(GREEN)   [+] Cleaned.$(RESET)"
